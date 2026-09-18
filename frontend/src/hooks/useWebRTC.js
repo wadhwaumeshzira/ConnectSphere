@@ -1,14 +1,21 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 
-const ICE_SERVERS = {
+let ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' }
+    { urls: 'stun:stun1.l.google.com:19302' }
   ],
 };
+
+// Fetch premium TURN servers from Metered asynchronously
+fetch("https://connectsphere.metered.live/api/v1/turn/credentials?apiKey=18dd77e5bc464252ed5bd43f7827f5a60d6c")
+  .then(res => res.json())
+  .then(servers => {
+    // Append the premium servers to the existing STUN fallbacks
+    ICE_SERVERS.iceServers = [...ICE_SERVERS.iceServers, ...servers];
+    console.log("TURN Servers loaded successfully.");
+  })
+  .catch(err => console.error("Failed to load TURN servers", err));
 
 export function useWebRTC(socket, roomCode, isJoined, micOn, cameraOn) {
   const [localStream, setLocalStream] = useState(null);
