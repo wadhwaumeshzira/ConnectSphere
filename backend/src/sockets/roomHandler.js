@@ -2,6 +2,7 @@ import Room from '../models/Room.js';
 
 // Simple in-memory state for v1. 
 const roomParticipants = new Map(); // roomCode -> Map(socketId -> { socketId, displayName })
+const emptyRoomTimers = new Map(); // roomCode -> timeoutId
 
 export default (io, socket) => {
   socket.on('join-room', async (payload) => {
@@ -20,6 +21,12 @@ export default (io, socket) => {
       }
 
       socket.join(roomCode);
+      
+      // Cancel empty room timer if someone joins
+      if (emptyRoomTimers.has(roomCode)) {
+        clearTimeout(emptyRoomTimers.get(roomCode));
+        emptyRoomTimers.delete(roomCode);
+      }
 
       const participant = { 
         socketId: socket.id, 
@@ -166,6 +173,19 @@ function handleLeave(io, socket, roomCode) {
     participants.delete(socket.id);
     if (participants.size === 0) {
       roomParticipants.delete(roomCode);
+      
+      // Start 10-minute auto-delete timer
+      const timerId = setTimeout(async () => {
+        try {
+          await Room.deleteOne({ roomCode });
+          console.log(`Room ${roomCode} deleted due to inactivity (10 mins empty)`);
+        } catch (e) {
+          console.error(`Failed to auto-delete room ${roomCode}:`, e);
+        }
+        emptyRoomTimers.delete(roomCode);
+      }, 10 * 60 * 1000); // 10 minutes
+      
+      emptyRoomTimers.set(roomCode, timerId);
     } else {
       roomParticipants.set(roomCode, participants);
     }
