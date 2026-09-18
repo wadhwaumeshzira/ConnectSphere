@@ -8,21 +8,30 @@ let ICE_SERVERS = {
 };
 
 // Fetch premium TURN servers from Metered asynchronously
-fetch("https://connectsphere.metered.live/api/v1/turn/credentials?apiKey=18dd77e5bc464252ed5bd43f7827f5a60d6c")
+let turnServersPromise = fetch("https://connectsphere.metered.live/api/v1/turn/credentials?apiKey=18dd77e5bc464252ed5bd43f7827f5a60d6c")
   .then(res => res.json())
   .then(servers => {
     // Append the premium servers to the existing STUN fallbacks
     ICE_SERVERS.iceServers = [...ICE_SERVERS.iceServers, ...servers];
     console.log("TURN Servers loaded successfully.");
+    return true;
   })
-  .catch(err => console.error("Failed to load TURN servers", err));
+  .catch(err => {
+    console.error("Failed to load TURN servers", err);
+    return false;
+  });
 
 export function useWebRTC(socket, roomCode, isJoined, micOn, cameraOn) {
   const [localStream, setLocalStream] = useState(null);
   const [remoteStreams, setRemoteStreams] = useState([]); // [{ socketId, stream }]
   const [isMediaReady, setIsMediaReady] = useState(false);
+  const [isTurnReady, setIsTurnReady] = useState(false);
   const peersRef = useRef(new Map());
   const candidateQueueRef = useRef({}); // socketId -> RTCIceCandidate[]
+
+  useEffect(() => {
+    turnServersPromise.then(() => setIsTurnReady(true));
+  }, []);
 
   // Initialize local stream
   useEffect(() => {
@@ -325,5 +334,5 @@ export function useWebRTC(socket, roomCode, isJoined, micOn, cameraOn) {
     }
   }, [localStream, isScreenSharing, cameraOn]);
 
-  return { localStream, remoteStreams, isScreenSharing, toggleScreenShare, isMediaReady };
+  return { localStream, remoteStreams, isScreenSharing, toggleScreenShare, isMediaReady: isMediaReady && isTurnReady };
 }
