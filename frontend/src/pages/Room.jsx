@@ -286,12 +286,12 @@ export default function Room() {
     );
   }
 
-  // Determine grid columns
+  // Determine grid columns and rows
   const totalTiles = remoteStreams.length + 1; // +1 for local
-  let gridCols = 'grid-cols-1';
-  if (totalTiles === 2) gridCols = 'grid-cols-1 md:grid-cols-2';
-  else if (totalTiles >= 3 && totalTiles <= 4) gridCols = 'grid-cols-2';
-  else if (totalTiles >= 5) gridCols = 'grid-cols-2 md:grid-cols-3';
+  let gridClasses = 'grid-cols-1 grid-rows-1';
+  if (totalTiles === 2) gridClasses = 'grid-cols-1 grid-rows-2 md:grid-cols-2 md:grid-rows-1';
+  else if (totalTiles >= 3 && totalTiles <= 4) gridClasses = 'grid-cols-2 grid-rows-2';
+  else if (totalTiles >= 5) gridClasses = 'grid-cols-2 grid-rows-3 md:grid-cols-3 md:grid-rows-2';
 
   // Active Call UI
   return (
@@ -366,39 +366,42 @@ export default function Room() {
               <div className="flex md:flex-col gap-4 overflow-x-auto md:overflow-y-auto w-full md:w-64 h-48 md:h-full shrink-0">
                 {/* Unpinned Videos */}
                 {pinnedSocketId !== 'local' && (
-                  <VideoTile 
-                    stream={localStream} 
-                    isLocal={true} 
-                    displayName={displayName + " (You)"}
-                    isAudioMuted={!micOn}
-                    isVideoMuted={!cameraOn}
-                    isHandRaised={isHandRaised}
-                    isPinned={false}
-                    onTogglePin={() => setPinnedSocketId('local')}
-                    isScreenSharing={isScreenSharing}
-                  />
+                  <div className="w-40 md:w-full h-full md:h-40 shrink-0">
+                    <VideoTile 
+                      stream={localStream} 
+                      isLocal={true} 
+                      displayName={displayName + " (You)"}
+                      isAudioMuted={!micOn}
+                      isVideoMuted={!cameraOn}
+                      isHandRaised={isHandRaised}
+                      isPinned={false}
+                      onTogglePin={() => setPinnedSocketId('local')}
+                      isScreenSharing={isScreenSharing}
+                    />
+                  </div>
                 )}
                 {remoteStreams.filter(rs => rs.socketId !== pinnedSocketId).map(({ socketId, stream }) => {
                   const participant = participants.find(p => p.socketId === socketId);
                   const media = participantMedia[socketId] || { audio: true, video: true };
                   return (
-                    <VideoTile 
-                      key={socketId}
-                      stream={stream}
-                      isLocal={false}
-                      displayName={participant?.displayName || 'Unknown'}
-                      isAudioMuted={!media.audio}
-                      isVideoMuted={!media.video}
-                      isHandRaised={raisedHands.has(socketId)}
-                      isPinned={false}
-                      onTogglePin={() => setPinnedSocketId(socketId)}
-                    />
+                    <div key={socketId} className="w-40 md:w-full h-full md:h-40 shrink-0">
+                      <VideoTile 
+                        stream={stream}
+                        isLocal={false}
+                        displayName={participant?.displayName || 'Unknown'}
+                        isAudioMuted={!media.audio}
+                        isVideoMuted={!media.video}
+                        isHandRaised={raisedHands.has(socketId)}
+                        isPinned={false}
+                        onTogglePin={() => setPinnedSocketId(socketId)}
+                      />
+                    </div>
                   );
                 })}
               </div>
             </div>
           ) : (
-            <div className={`w-full h-full max-h-full grid ${gridCols} gap-4`}>
+            <div className={`w-full h-full max-h-full grid ${gridClasses} gap-4`}>
               
                 <VideoTile 
                   stream={localStream} 
