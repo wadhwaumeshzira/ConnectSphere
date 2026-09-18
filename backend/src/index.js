@@ -21,8 +21,11 @@ initSockets(httpServer);
 connectDB();
 
 // Middleware
-app.use(cors({ origin: process.env.VITE_SOCKET_URL || 'http://localhost:5173' }));
+app.use(cors({ origin: process.env.CLIENT_URL || process.env.VITE_SOCKET_URL || 'http://localhost:5173' }));
 app.use(express.json());
+
+// Health Check
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
 // Routes
 app.use('/api/auth', authRoutes);

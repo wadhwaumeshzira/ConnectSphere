@@ -5,7 +5,7 @@ import roomHandler from './roomHandler.js';
 export const initSockets = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: process.env.VITE_SOCKET_URL || 'http://localhost:5173',
+      origin: process.env.CLIENT_URL || process.env.VITE_SOCKET_URL || 'http://localhost:5173',
       methods: ["GET", "POST"]
     }
   });
