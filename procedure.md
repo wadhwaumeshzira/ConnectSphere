@@ -1,3 +1,26 @@
+## [2026-09-18] Vercel SPA Routing aur WebRTC NAT Traversal (Mobile Support)
+
+**Kya kiya:** Frontend Vercel pe aur Backend Render pe deploy hone ke baad jo routing issues (404) aur video rendering ke mobile network bugs (black screen) the, unko theek kiya. 
+
+**Kaise kiya:** 
+- Vercel SPA 404 issue: Vite apps single page hoti hain, isliye refresh pe 404 aata hai. Main ne `vercel.json` banaya rules define karne ke liye, par Windows PowerShell ne galti se usko UTF-16 encoding mein save kar diya jisse Vercel build crash hua. Fir Node script use karke pure UTF-8 mein config rewrite kiya, tab jake routing thik hui!
+- Render CORS / Environment: Frontend URL mein `/login` path laga tha Render pe jo CORS tod raha tha, aur Vercel pe `/api` missing tha. Dono theek karwaye.
+- Mobile Grid fix: Kisi kisi case mein video connect hone se pehle CSS Grid ek implicit invisible row bana raha tha jisse connecting video screen ke bottom ke baahar overflow hoke chhup jati thi. Usko `participants.length` se update karke CSS Grid ko 100% stable banaya.
+- NAT Traversal (Symmetric NAT): Mobile data (Jio/Airtel) wale users WebRTC peer-to-peer connect nahi kar paa rahe the (black screen). Main ne `useWebRTC.js` mein OpenRelay ke free TURN servers inject kiye, jisse strict firewalls aur carrier-grade NATs bypass hoke cloud relay ke through connection establish ho jaata hai.
+
+**Problem kya aaya:** 1. Vercel ne UTF-16 file error maar di. 2. CSS grid logic galat hone se 2nd banda screen ke bahar render ho raha tha. 3. Mobile network pe STUN P2P connections block ho rahe the.
+
+**Solution kaise nikala:** 1. Node se UTF-8 file force ki. 2. Grid count logic correctly bind kiya. 3. Code mein hi public TURN servers add kiye taaki STUN block hone pe TURN fallback kare.
+
+## [2026-09-18] Auto-Delete Empty Rooms (DB Optimization)
+
+**Kya kiya:** Agar koi meeting room khali (0 participants) ho jata hai, toh 10 minutes wait karne ke baad usko MongoDB se auto-delete kar diya taaki faltu DB na bhare.
+
+**Kaise kiya:** `roomHandler.js` mein `emptyRoomTimers` ka ek naya `Map` banaya. Jab aakhri banda leave karta hai (`participants.size === 0`), toh ek 10-minute ka `setTimeout` chalu hota hai jo `Room.deleteOne` call karta hai. Agar un 10 minutes ke andar koi wapas join karta hai, toh `clearTimeout` se wo deletion ruk jata hai.
+
+**Problem:** Puraane unused meeting IDs database mein jama hote ja rahe the, jo resource waste tha.
+**Solution:** In-memory timers ka use karke lazy deletion laga di.
+
 ## [2026-09-18] Branding Update
 
 **Kya kiya:** Site ka title `ConnectSphere` kiya aur naya SVG favicon (globe/network icon) lagaya.
