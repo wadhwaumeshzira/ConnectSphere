@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb://mongo:27017/connectsphere
+      - JWT_SECRET=${JWT_SECRET}
+      - TURN_SECRET=${TURN_SECRET}
+    command: npm start
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  coturn:
+    image: coturn/coturn
+    ports:
+      - "3478:3478"
+      - "3478:3478/udp"
+    command: >
+      -n --log-file=stdout
+      --min-port=49152 --max-port=65535
+      --realm=connectsphere.local
+      --use-auth-secret
+      --static-auth-secret=${TURN_SECRET}
+
+volumes:
+  mongo_data:

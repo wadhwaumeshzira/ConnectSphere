@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0c0c0e;
+  --color-surface: #151518;
+  --color-surfaceHighlight: #1f1f23;
+  --color-surfaceBorder: #27272a;
+  --color-accent: #4f46e5;
+  --color-accentHover: #4338ca;
+  --color-textPrimary: #f8fafc;
+  --color-textSecondary: #94a3b8;
+  --color-danger: #ef4444;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-textPrimary antialiased selection:bg-accent/30;
+    min-height: 100vh;
+  }
+  
+  /* Remove default clear buttons in inputs */
+  input[type="search"]::-webkit-search-decoration,
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-results-button,
+  input[type="search"]::-webkit-search-results-decoration {
+    display: none;
+  }
+}
+
+@utility focus-ring {
+  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent text-white px-4 py-2 rounded-md font-medium transition-colors hover:bg-accentHover disabled:opacity-50 disabled:cursor-not-allowed focus-ring;
+  }
+  
+  .btn-secondary {
+    @apply bg-surfaceHighlight text-textPrimary px-4 py-2 rounded-md font-medium transition-colors hover:bg-surfaceBorder disabled:opacity-50 disabled:cursor-not-allowed border border-surfaceBorder focus-ring;
+  }
+
+  .input-field {
+    @apply w-full bg-surface border border-surfaceBorder rounded-md px-4 py-2 text-textPrimary placeholder:text-textSecondary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-shadow disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+}
