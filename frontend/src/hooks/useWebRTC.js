@@ -27,6 +27,7 @@ export function useWebRTC(socket, roomCode, isJoined, micOn, cameraOn) {
   const [remoteStreams, setRemoteStreams] = useState([]); // [{ socketId, stream }]
   const [isMediaReady, setIsMediaReady] = useState(false);
   const peersRef = useRef(new Map());
+  const candidateQueueRef = useRef({}); // socketId -> RTCIceCandidate[]
 
   // Initialize local stream
   useEffect(() => {
@@ -130,6 +131,20 @@ export function useWebRTC(socket, roomCode, isJoined, micOn, cameraOn) {
       return peer;
     };
 
+    const processCandidateQueue = async (targetSocketId, peer) => {
+      const queue = candidateQueueRef.current[targetSocketId];
+      if (queue && queue.length > 0) {
+        for (const candidate of queue) {
+          try {
+            await peer.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (err) {
+            console.error("Error adding queued ice candidate", err);
+          }
+        }
+        candidateQueueRef.current[targetSocketId] = [];
+      }
+    };
+
     const handleUserJoined = async (participant) => {
       // Existing user creates offer to the newly joined user
       const peer = createPeerConnection(participant.socketId);
@@ -150,6 +165,8 @@ export function useWebRTC(socket, roomCode, isJoined, micOn, cameraOn) {
       const peer = createPeerConnection(fromSocketId);
       try {
         await peer.setRemoteDescription(new RTCSessionDescription(sdp));
+        await processCandidateQueue(fromSocketId, peer);
+        
         const answer = await peer.createAnswer();
         await peer.setLocalDescription(answer);
         socket.emit('answer', {
@@ -167,6 +184,7 @@ export function useWebRTC(socket, roomCode, isJoined, micOn, cameraOn) {
       if (peer) {
         try {
           await peer.setRemoteDescription(new RTCSessionDescription(sdp));
+          await processCandidateQueue(fromSocketId, peer);
         } catch (err) {
           console.error("Error handling answer", err);
         }
@@ -176,16 +194,31 @@ export function useWebRTC(socket, roomCode, isJoined, micOn, cameraOn) {
     const handleIceCandidate = async ({ fromSocketId, candidate }) => {
       const peer = peersRef.current.get(fromSocketId);
       if (peer) {
-        try {
-          await peer.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch (err) {
-          console.error("Error adding ice candidate", err);
+        if (peer.remoteDescription) {
+          try {
+            await peer.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (err) {
+            console.error("Error adding ice candidate", err);
+          }
+        } else {
+          // Queue candidate until remote description is set
+          if (!candidateQueueRef.current[fromSocketId]) {
+            candidateQueueRef.current[fromSocketId] = [];
+          }
+          candidateQueueRef.current[fromSocketId].push(candidate);
         }
+      } else {
+        // Queue candidate before peer is even created (rare but possible)
+        if (!candidateQueueRef.current[fromSocketId]) {
+          candidateQueueRef.current[fromSocketId] = [];
+        }
+        candidateQueueRef.current[fromSocketId].push(candidate);
       }
     };
 
     const handleUserLeft = ({ socketId }) => {
       removePeer(socketId);
+      delete candidateQueueRef.current[socketId];
     };
 
     socket.on('user-joined', handleUserJoined);
@@ -208,6 +241,7 @@ export function useWebRTC(socket, roomCode, isJoined, micOn, cameraOn) {
     return () => {
       peersRef.current.forEach(peer => peer.close());
       peersRef.current.clear();
+      candidateQueueRef.current = {};
       setRemoteStreams([]);
     };
   }, []);
