@@ -380,20 +380,20 @@ export default function Room() {
                     />
                   </div>
                 )}
-                {remoteStreams.filter(rs => rs.socketId !== pinnedSocketId).map(({ socketId, stream }) => {
-                  const participant = participants.find(p => p.socketId === socketId);
-                  const media = participantMedia[socketId] || { audio: true, video: true };
+                {participants.filter(p => p.socketId !== socket?.id && p.socketId !== pinnedSocketId).map((participant) => {
+                  const rs = remoteStreams.find(s => s.socketId === participant.socketId);
+                  const media = participantMedia[participant.socketId] || { audio: true, video: true };
                   return (
-                    <div key={socketId} className="w-40 md:w-full h-full md:h-40 shrink-0">
+                    <div key={participant.socketId} className="w-40 md:w-full h-full md:h-40 shrink-0">
                       <VideoTile 
-                        stream={stream}
+                        stream={rs ? rs.stream : null}
                         isLocal={false}
-                        displayName={participant?.displayName || 'Unknown'}
+                        displayName={participant.displayName}
                         isAudioMuted={!media.audio}
                         isVideoMuted={!media.video}
-                        isHandRaised={raisedHands.has(socketId)}
+                        isHandRaised={raisedHands.has(participant.socketId)}
                         isPinned={false}
-                        onTogglePin={() => setPinnedSocketId(socketId)}
+                        onTogglePin={() => setPinnedSocketId(participant.socketId)}
                       />
                     </div>
                   );
@@ -416,21 +416,21 @@ export default function Room() {
                 />
 
               {/* Remote Videos */}
-              {remoteStreams.map(({ socketId, stream }) => {
-                const participant = participants.find(p => p.socketId === socketId);
-                const media = participantMedia[socketId] || { audio: true, video: true };
+              {participants.filter(p => p.socketId !== socket?.id).map((participant) => {
+                const rs = remoteStreams.find(s => s.socketId === participant.socketId);
+                const media = participantMedia[participant.socketId] || { audio: true, video: true };
                 
                 return (
                   <VideoTile 
-                    key={socketId}
-                    stream={stream}
+                    key={participant.socketId}
+                    stream={rs ? rs.stream : null}
                     isLocal={false}
-                    displayName={participant?.displayName || 'Unknown'}
+                    displayName={participant.displayName}
                     isAudioMuted={!media.audio}
                     isVideoMuted={!media.video}
-                    isHandRaised={raisedHands.has(socketId)}
+                    isHandRaised={raisedHands.has(participant.socketId)}
                     isPinned={false}
-                    onTogglePin={() => setPinnedSocketId(socketId)}
+                    onTogglePin={() => setPinnedSocketId(participant.socketId)}
                   />
                 );
               })}
