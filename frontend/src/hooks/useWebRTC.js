@@ -149,7 +149,10 @@ export function useWebRTC(socket, roomCode, isJoined, micOn, cameraOn) {
       // Existing user creates offer to the newly joined user
       const peer = createPeerConnection(participant.socketId);
       try {
-        const offer = await peer.createOffer();
+        const offer = await peer.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: true
+        });
         await peer.setLocalDescription(offer);
         socket.emit('offer', {
           roomCode,
