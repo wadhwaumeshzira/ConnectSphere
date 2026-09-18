@@ -287,7 +287,7 @@ export default function Room() {
   }
 
   // Determine grid columns and rows
-  const totalTiles = remoteStreams.length + 1; // +1 for local
+  const totalTiles = participants.length || 1;
   let gridClasses = 'grid-cols-1 grid-rows-1';
   if (totalTiles === 2) gridClasses = 'grid-cols-1 grid-rows-2 md:grid-cols-2 md:grid-rows-1';
   else if (totalTiles >= 3 && totalTiles <= 4) gridClasses = 'grid-cols-2 grid-rows-2';
